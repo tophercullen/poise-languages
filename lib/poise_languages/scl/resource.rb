@@ -106,9 +106,16 @@ module PoiseLanguages
           # NOTE: THIS IS NOT TESTED BECAUSE REDHAT DOESN'T OFFER ANY WAY TO DO
           # AUTOMATED TESTING. IF YOU USE REDHAT AND THIS BREAKS, PLEASE LET ME
           # KNOW BY FILING A GITHUB ISSUE AT http://github.com/poise/poise-languages/issues/new.
-          repo_name = "rhel-server-rhscl-#{node['platform_version'][0]}-rpms"
-          execute "subscription-manager repos --enable #{repo_name}" do
-            not_if { shell_out!('subscription-manager repos --list-enabled').stdout.include?(repo_name) }
+          if node['cloud']['provider'] == 'ec2'
+            repo_name = "rhui-REGION-rhel-server-rhscl"
+            execute "yum-config-manager --quiet --enable #{repo_name}" do
+              not_if { shell_out!('yum repolist').stdout.include?(repo_name) }
+            end
+          else
+            repo_name = "rhel-server-rhscl-#{node['platform_version'][0]}-rpms"
+            execute "subscription-manager repos --enable #{repo_name}" do
+              not_if { shell_out!('subscription-manager repos --list-enabled').stdout.include?(repo_name) }
+            end
           end
         else
           package 'centos-release-scl-rh' do
